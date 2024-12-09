@@ -1,101 +1,129 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useEffect, useState } from "react";
+import { collection, getDocs, doc } from "firebase/firestore";
+import { db } from "@/app/firebase";
+
+const DashboardPage = () => {
+  const [totalBuildings, setTotalBuildings] = useState(0);
+  const [totalSklads, setTotalSklads] = useState(0);
+  const [totalRooms, setTotalRooms] = useState(0);
+  const [totalEquipment, setTotalEquipment] = useState(0);
+  const [totalEquipmentValue, setTotalEquipmentValue] = useState(0);
+  const [loading, setLoading] = useState(true); // Loading holati
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true); // Ma'lumotlarni olishni boshlash
+      let buildingsCount = 0;
+      let skladsCount = 0;
+      let roomsCount = 0;
+      let equipmentCount = 0;
+      let equipmentValueSum = 0;
+
+      const buildingsRef = collection(db, "buildings");
+      const buildingsSnapshot = await getDocs(buildingsRef);
+      buildingsCount = buildingsSnapshot.docs.length;
+
+      for (const buildingDoc of buildingsSnapshot.docs) {
+        const buildingId = buildingDoc.id;
+
+        // Skladlar sonini olish
+        const skladsRef = collection(doc(db, "buildings", buildingId), "sklads");
+        const skladsSnapshot = await getDocs(skladsRef);
+        skladsCount += skladsSnapshot.docs.length;
+
+        for (const skladDoc of skladsSnapshot.docs) {
+          const skladId = skladDoc.id;
+
+          // Skladlardagi jihozlarni hisoblash
+          const equipmentRef = collection(
+            doc(db, "buildings", buildingId, "sklads", skladId),
+            "equipment"
+          );
+          const equipmentSnapshot = await getDocs(equipmentRef);
+          equipmentCount += equipmentSnapshot.docs.length;
+
+          equipmentSnapshot.docs.forEach((doc) => {
+            equipmentValueSum += doc.data().totalPrice || 0;
+          });
+        }
+
+        // Xonalar sonini olish
+        const roomsRef = collection(doc(db, "buildings", buildingId), "rooms");
+        const roomsSnapshot = await getDocs(roomsRef);
+        roomsCount += roomsSnapshot.docs.length;
+
+        for (const roomDoc of roomsSnapshot.docs) {
+          const roomId = roomDoc.id;
+
+          // Xonalardagi jihozlarni hisoblash
+          const equipmentRef = collection(
+            doc(db, "buildings", buildingId, "rooms", roomId),
+            "equipment"
+          );
+          const equipmentSnapshot = await getDocs(equipmentRef);
+          equipmentCount += equipmentSnapshot.docs.length;
+
+          equipmentSnapshot.docs.forEach((doc) => {
+            equipmentValueSum += doc.data().totalPrice || 0;
+          });
+        }
+      }
+
+      setTotalBuildings(buildingsCount);
+      setTotalSklads(skladsCount);
+      setTotalRooms(roomsCount);
+      setTotalEquipment(equipmentCount);
+      setTotalEquipmentValue(equipmentValueSum);
+      setLoading(false); // Ma'lumotlar yuklanib bo'ldi
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  function formatCurrency(amount) {
+    return new Intl.NumberFormat("uz-UZ", {
+      style: "currency",
+      currency: "UZS",
+    }).format(amount);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-xl font-semibold">Yuklanmoqda...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="p-5 bg-slate-100">
+      <h1 className="text-2xl mb-4">Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-4 shadow rounded">
+          <h2 className="text-lg font-semibold">Barcha Binolar</h2>
+          <p className="text-2xl">{totalBuildings}</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="bg-white p-4 shadow rounded">
+          <h2 className="text-lg font-semibold">Barcha Skladlar</h2>
+          <p className="text-2xl">{totalSklads}</p>
+        </div>
+        <div className="bg-white p-4 shadow rounded">
+          <h2 className="text-lg font-semibold">Barcha Xonalar</h2>
+          <p className="text-2xl">{totalRooms}</p>
+        </div>
+        <div className="bg-white p-4 shadow rounded">
+          <h2 className="text-lg font-semibold">Barcha Jihozlar</h2>
+          <p className="text-2xl">{totalEquipment}</p>
+        </div>
+        <div className="bg-white p-4 shadow rounded">
+          <h2 className="text-lg font-semibold">Barcha Jihozlar Summasi</h2>
+          <p className="text-2xl">{formatCurrency(totalEquipmentValue)}</p>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default DashboardPage;

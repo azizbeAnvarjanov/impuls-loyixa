@@ -1,0 +1,18 @@
+{
+  "buildings": {
+    "buildingId1": {
+      "name": "Bino 1",
+      "rooms": [
+      {
+        "roomId": "room1",
+        "roomName": "Room 1"
+      },
+      {
+        "roomId": "room2",
+        "roomName": "Room 2"
+      }
+    ],
+      "sklads": ["Sklad 1", "Sklad 2"]
+    }
+  }
+}
