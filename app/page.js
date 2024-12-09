@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, doc } from "firebase/firestore";
 import { db } from "@/app/firebase";
+import ProtectRoute from "./ProtectRoute";
 
 const DashboardPage = () => {
   const [totalBuildings, setTotalBuildings] = useState(0);
@@ -98,6 +99,7 @@ const DashboardPage = () => {
   }
 
   return (
+    <ProtectRoute>
     <div className="p-5 bg-slate-100">
       <h1 className="text-2xl mb-4">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -123,6 +125,7 @@ const DashboardPage = () => {
         </div>
       </div>
     </div>
+    </ProtectRoute>
   );
 };
 
